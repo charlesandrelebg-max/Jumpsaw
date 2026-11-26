@@ -1,82 +1,75 @@
-import sys
+import random
 import pygame
+from constantes import LARGEUR, HAUTEUR, COULEUR_TEXTE
 
-pygame.init()
-WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Arene - Jumpsaw")
+LIMITE_DEATH_ZONE = 60  # juste sous le bandeau de texte
 
-BACKGROUND = (30, 30, 60)
-COLOR_TEXT = (185, 255, 255)
 
-font_text = pygame.font.Font(None, 36)
+class Objet:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.vx = random.choice([-3, 3])
+        self.vy = 0
+        self.rayon = 15
+        self.couleur = (255, 200, 0)
+
+    def deplacer(self):
+        self.x += self.vx
+        self.y += self.vy
+
+    def dessiner(self, surface):
+        pygame.draw.circle(surface, self.couleur, (round(self.x), round(self.y)), self.rayon)
+
 
 class Arene:
 
-  def __init__(self, money, score, quota):
-    self.money = money
-    self.score = score
-    self.quota = quota
-    self.objets = [Objet(400, 300), Objet(200, 400)]
+    def __init__(self, money, score, quota):
+        self.money = money
+        self.score = score
+        self.quota = quota
+        self.police = pygame.font.Font(None, 36)
+        self.objets = [Objet(400, 300), Objet(200, 400)]
 
-  def generer_interface(self, surface, souris_pos):
-    # Bandeau supérieur
-    info_text = f"Argent : {self.money} $   |   Score : {self.score}   |   Quota : {self.quota}"
-    surface.blit(font_text.render(info_text, True, COLOR_TEXT), (20, 20))
-    
-    # On parcourt une copie de la liste pour pouvoir supprimer des éléments en toute sécurité
+    def gerer_evenement(self, event):
+        return None
+
+    def mettre_a_jour(self):
+        # On parcourt une copie de la liste pour pouvoir supprimer en toute sécurité
         for obj in self.objets[:]:
-            # Application de la physique (gravité optionnelle pour le sol)
-            obj.vy += 0.3  # Gravité
+            obj.vy += 0.3  # gravité
             obj.deplacer()
-            
-            # --- 1. Murs (Côtés gauche et droit) ---
+
+            # Murs gauche et droit
             if obj.x - obj.rayon < 0:
                 obj.x = obj.rayon
-                obj.vx = -obj.vx * 0.8  # Inversion de vitesse + perte d'énergie (rebond)
-            elif obj.x + obj.rayon > WIDTH:
-                obj.x = WIDTH - obj.rayon
+                obj.vx = -obj.vx * 0.8
+            elif obj.x + obj.rayon > LARGEUR:
+                obj.x = LARGEUR - obj.rayon
                 obj.vx = -obj.vx * 0.8
 
-            # --- 2. Sol (Bas de la fenêtre) ---
-            if obj.y + obj.rayon > HEIGHT:
-                obj.y = HEIGHT - obj.rayon
-                obj.vy = -obj.vy * 0.6  # Rebond sur le sol
+            # Sol
+            if obj.y + obj.rayon > HAUTEUR:
+                obj.y = HAUTEUR - obj.rayon
+                obj.vy = -obj.vy * 0.6
+                if abs(obj.vy) < 1:  # évite de trembler sur place
+                    obj.vy = 0
 
-            # --- 3. Plafond (Death Zone) ---
-            # On fixe la limite de la death zone juste sous le bandeau textuel (par exemple y = 60)
-            if obj.y - obj.rayon < 60:
+            # Plafond (death zone)
+            if obj.y - obj.rayon < LIMITE_DEATH_ZONE:
                 self.objets.remove(obj)
-                self.score -= 50  # Petite pénalité de score par exemple
+                self.score -= 50
                 print("Objet détruit par la death zone !")
 
-            # Dessin de l'objet
-                obj.dessiner(surface)
-            else:
-                obj.dessiner(surface)
-                
     def augmenter_quota(self):
         if self.quota == 0:
-            return self.quota = 200
-        return self.quota = self.quota * 2
-        
-mon_arene = Arene(money=150, score=1200, quota=2000)
-clock = pygame.time.Clock()
-running = True
+            self.quota = 200
+        else:
+            self.quota = self.quota * 2
 
-while running:
-    souris_pos = pygame.mouse.get_pos()
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-mon_menu = Menu(money=150, score=1200, quota=2000)
-running = True
-
-  screen.fill(BACKGROUND)
-  mon_menu.generer_interface(screen, souris_pos)
-  pygame.display.flip()
-
-pygame.quit()
-sys.exit()
+    def dessiner(self, surface):
+        info = f"Argent : {self.money} $   |   Score : {self.score}   |   Quota : {self.quota}"
+        surface.blit(self.police.render(info, True, COULEUR_TEXTE), (20, 20))
+        pygame.draw.line(surface, (200, 50, 50), (0, LIMITE_DEATH_ZONE), (LARGEUR, LIMITE_DEATH_ZONE), 2)
+        for obj in self.objets:
+            obj.dessiner(surface)

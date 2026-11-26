@@ -12,6 +12,7 @@ class Joueur:
     FORCE_SAUT = 8
 
     def __init__(self, x, y):
+        """(x, y) = milieu du bas du personnage (ses pieds)."""
         self.img_droite = charger("perso_course_D.png")
         self.img_gauche = charger("perso_course_G.png")
         self.img_immobile = charger("perso_immobile.png")
@@ -19,7 +20,7 @@ class Joueur:
         self.img_mort = charger("perso_mort.png")
 
         self.image = self.img_immobile
-        self.rect = self.image.get_rect(topleft=(x, y))
+        self.rect = self.image.get_rect(midbottom=(x, y))
         self.mask = pygame.mask.from_surface(self.image)  # hitbox pixel par pixel
         self.vy = 0
         self.au_sol = False
@@ -42,7 +43,7 @@ class Joueur:
             self.rect.right = LARGEUR
 
     def sauter(self):
-        if self.au_sol:
+        if self.au_sol and not self.mort:
             self.vy = -self.FORCE_SAUT
             self.au_sol = False
 
@@ -57,6 +58,14 @@ class Joueur:
             self.image = self.img_gauche
         else:
             self.image = self.img_immobile
+
+        # Les images n'ont pas toutes la même taille : on garde les pieds au même endroit
+        pieds = self.rect.midbottom
+        self.rect = self.image.get_rect(midbottom=pieds)
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > LARGEUR:
+            self.rect.right = LARGEUR
         self.mask = pygame.mask.from_surface(self.image)
 
     def deplacer(self, touches, plateformes):
@@ -73,7 +82,9 @@ class Joueur:
         self.au_sol = False
 
         # sol provisoire (à remplacer par les plateformes)
-        if self.rect.bottom > HAUTEUR:
+        # ">=" et pas ">" : sinon le joueur est "au sol" une frame sur deux
+        # et le saut ne répond qu'une fois sur deux.
+        if self.rect.bottom >= HAUTEUR:
             self.rect.bottom = HAUTEUR
             self.vy = 0
             self.au_sol = True
@@ -149,7 +160,7 @@ class Jeu:
         self.reinitialiser()
 
     def reinitialiser(self):
-        self.joueur = Joueur(LARGEUR // 2, HAUTEUR - 32)
+        self.joueur = Joueur(LARGEUR // 2, HAUTEUR)
         self.scies = []
         self.caisse = Caisse(self.plateformes)
         self.score = 0

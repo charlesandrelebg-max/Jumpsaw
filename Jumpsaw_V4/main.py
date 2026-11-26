@@ -4,9 +4,9 @@ import pygame
 pygame.init()
 
 from constantes import LARGEUR, HAUTEUR, FPS, FOND
-from menu_V2 import Menu
+from menu_V3 import Menu
 from jeu import Jeu
-from arene import Arene
+from arene_V2 import Arene
 
 ecran = pygame.display.set_mode((LARGEUR, HAUTEUR))
 pygame.display.set_caption("A Slight Chance of Sawblades")
